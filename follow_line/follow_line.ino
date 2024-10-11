@@ -7,10 +7,11 @@
 #define SENS_R_PIN 14
 #define SENS_L_PIN 4
 
-int turnSpeed = 130;
-int forwardSpeed = 130;
+int turnSpeed = 115;
+int forwardSpeed = 115;
 float turnMultiplier = 0.5;
 unsigned long wheelLockThreshold = 250;
+int turnTime = 250;
 
 unsigned long lastTime = 0;
 unsigned long timeSpentTurning = 0;
@@ -69,32 +70,32 @@ void loop(){
   }
   else if (!right && left) { // Turn right
     timeSpentTurning += deltaTime;
-    analogWrite(ENA_PIN, turnSpeed * turnMultiplier);
+    //Serial.println(timeSpentTurning);
+    analogWrite(ENA_PIN, turnSpeed);
     analogWrite(ENB_PIN, turnSpeed);
     digitalWrite(IN1_PIN, LOW);
     digitalWrite(IN2_PIN, LOW);
-    /*if (timeSpentTurning > wheelLockThreshold) { // Locks wheel if it's turning for long time
-      digitalWrite(IN1_PIN, LOW);
-    }
-    else {
-      digitalWrite(IN1_PIN, HIGH);
-    }*/
     digitalWrite(IN3_PIN, HIGH);
     digitalWrite(IN4_PIN, LOW);
+
+    if (timeSpentTurning > wheelLockThreshold) { // Locks wheel if it's turning for long time
+      digitalWrite(IN2_PIN, HIGH);
+      delay(turnTime);
+    }
   }
   else if (right && !left) { // Turn left
     timeSpentTurning += deltaTime;
+    //Serial.println(timeSpentTurning);
     analogWrite(ENA_PIN, turnSpeed);
-    analogWrite(ENB_PIN, turnSpeed * turnMultiplier);
+    analogWrite(ENB_PIN, turnSpeed);
     digitalWrite(IN1_PIN, HIGH);
     digitalWrite(IN2_PIN, LOW);
     digitalWrite(IN3_PIN, LOW);
     digitalWrite(IN4_PIN, LOW);
-    /*if (timeSpentTurning > wheelLockThreshold) { // Locks wheel if it's turning for long time
-      digitalWrite(IN3_PIN, LOW);
+    
+    if (timeSpentTurning > wheelLockThreshold) { // Locks wheel if it's turning for long time
+      digitalWrite(IN4_PIN, HIGH);
+      delay(turnTime);
     }
-    else {
-      digitalWrite(IN3_PIN, HIGH); // Left fov
-    }*/
   }
 }
