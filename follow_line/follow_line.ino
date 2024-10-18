@@ -7,10 +7,10 @@
 #define SENS_R_PIN 14
 #define SENS_L_PIN 4
 
-int turnSpeed = 115;
-int forwardSpeed = 115;
+int turnSpeed = 180;
+int forwardSpeed = 140;
 float turnMultiplier = 0.5;
-unsigned long wheelLockThreshold = 250;
+unsigned long wheelLockThreshold = 100;
 int turnTime = 250;
 
 unsigned long lastTime = 0;
