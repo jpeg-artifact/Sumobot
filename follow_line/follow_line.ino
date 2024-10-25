@@ -10,8 +10,8 @@
 int turnSpeed = 180;
 int forwardSpeed = 140;
 float turnMultiplier = 0.5;
-unsigned long wheelLockThreshold = 100;
-int turnTime = 250;
+unsigned long wheelLockThreshold = 25;
+int turnTime = 150;
 
 unsigned long lastTime = 0;
 unsigned long timeSpentTurning = 0;
@@ -34,7 +34,7 @@ void setup(){
   analogWrite(ENB_PIN, forwardSpeed);
 
   delay(5000);
-  turnThreshold = ((analogRead(SENS_R_PIN) + analogRead(SENS_L_PIN)) / 2) * 0.8;
+  turnThreshold = ((analogRead(SENS_R_PIN) + analogRead(SENS_L_PIN)) / 2) * 0.7;
   //Serial.println(turnThreshold);
 }
 
