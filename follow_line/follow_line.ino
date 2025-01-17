@@ -7,16 +7,15 @@
 #define SENS_R_PIN 14
 #define SENS_L_PIN 4
 
-int turnSpeed = 180;
-int forwardSpeed = 140;
-float turnMultiplier = 0.5;
-unsigned long wheelLockThreshold = 25;
-int turnTime = 150;
+int turnSpeed = 180; // Hur snabbt däcket snurrar när den svänger. Värde mellan 0 och 255.
+int forwardSpeed = 140; // Hur snabbt däcken snurrar när den åker framåt. Värde mellan 0 och 255.
+unsigned long wheelLockThreshold = 25; // Hur lång tid sensorn behöver känna av linjen innan däcket låser sig.
+int turnTime = 150; // Hur länge däcket är låst
 
-unsigned long lastTime = 0;
-unsigned long timeSpentTurning = 0;
+unsigned long lastTime = 0; // Används för att räkna ut delta time.
+unsigned long timeSpentTurning = 0; // Håller reda på hur länge bilen har svängt under en svängning.
 
-int turnThreshold = 4095;
+int turnThreshold = 4095; // Värdet som sensorns avläsnings värde behöver gå under för att svänga. !!DETTA VÄRDE SÄTTS AUTOMATISKTS I SETUP!!
 
 void setup(){
   //Serial.begin(9600);
@@ -34,32 +33,33 @@ void setup(){
   analogWrite(ENB_PIN, forwardSpeed);
 
   delay(5000);
-  turnThreshold = ((analogRead(SENS_R_PIN) + analogRead(SENS_L_PIN)) / 2) * 0.7;
+  turnThreshold = ((analogRead(SENS_R_PIN) + analogRead(SENS_L_PIN)) / 2) * 0.7; // Läser av sensorerna och tar deras medelvärde, sedan multiplicerar
   //Serial.println(turnThreshold);
 }
 
 void loop(){
-  int SENS_R_value = analogRead(SENS_R_PIN);
-  int SENS_L_value = analogRead(SENS_L_PIN);
-  bool right = SENS_R_value < turnThreshold;
-  bool left = SENS_L_value < turnThreshold;
-  unsigned long deltaTime = millis() - lastTime;
+  int SENS_R_value = analogRead(SENS_R_PIN); // Värdet avläst från högra sensorn
+  int SENS_L_value = analogRead(SENS_L_PIN); // Värdet avläst från vänstra sensorn 
+  bool right = SENS_R_value < turnThreshold; // En check i fall högra sensorns värde är lägre än turnThreshold
+  bool left = SENS_L_value < turnThreshold; // En check i fall vänstra sensorns värde är lägre än turnThreshold
+  unsigned long deltaTime = millis() - lastTime; // Delta time beräkningar
   lastTime = millis();
 
   //Serial.println(SENS_L_value);
   //Serial.println(SENS_R_value);
 
+  // Sätt hastighet på motorerna
   analogWrite(ENA_PIN, forwardSpeed); // RIGHT
   analogWrite(ENB_PIN, forwardSpeed); // LEFT
   
-  // Forward
+  // Åka framåt
   if (right && left) {
     timeSpentTurning = 0;
     digitalWrite(IN1_PIN, LOW); // RIGHT REV
     digitalWrite(IN2_PIN, HIGH); // RIGHT FOR
     digitalWrite(IN3_PIN, LOW); // LEFT REV
     digitalWrite(IN4_PIN, HIGH); // LEFT FOR
-  }
+  } // Åka bakåt
   else if (!right && !left) {
     timeSpentTurning = 0;
     digitalWrite(IN1_PIN, HIGH);
@@ -67,8 +67,8 @@ void loop(){
     digitalWrite(IN3_PIN, HIGH);
     digitalWrite(IN4_PIN, LOW);
     
-  }
-  else if (!right && left) { // Turn right
+  } // Svänga höger
+  else if (!right && left) { 
     timeSpentTurning += deltaTime;
     //Serial.println(timeSpentTurning);
     analogWrite(ENA_PIN, turnSpeed);
@@ -78,12 +78,12 @@ void loop(){
     digitalWrite(IN3_PIN, HIGH);
     digitalWrite(IN4_PIN, LOW);
 
-    if (timeSpentTurning > wheelLockThreshold) { // Locks wheel if it's turning for long time
+    if (timeSpentTurning > wheelLockThreshold) { // Lås däck om den har svängt länge
       digitalWrite(IN2_PIN, HIGH);
       delay(turnTime);
     }
-  }
-  else if (right && !left) { // Turn left
+  } // Svänga vänster
+  else if (right && !left) {
     timeSpentTurning += deltaTime;
     //Serial.println(timeSpentTurning);
     analogWrite(ENA_PIN, turnSpeed);
@@ -93,7 +93,7 @@ void loop(){
     digitalWrite(IN3_PIN, LOW);
     digitalWrite(IN4_PIN, LOW);
     
-    if (timeSpentTurning > wheelLockThreshold) { // Locks wheel if it's turning for long time
+    if (timeSpentTurning > wheelLockThreshold) { // Lås däck om den har svängt länge
       digitalWrite(IN4_PIN, HIGH);
       delay(turnTime);
     }
