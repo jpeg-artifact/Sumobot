@@ -193,8 +193,10 @@ void loop() {
         Serial.println(vector_to_destination[0]);
         Serial.print("y-to-dest: ");
         Serial.println(vector_to_destination[1]);
-        Serial.print("Dot product: ");
-        Serial.println(dot_product(vector_to_destination[0], vector_to_destination[1], 0, 10, angle_to_destination));
+        Serial.print("angle: ");
+        Serial.println(angle_to_destination);
+        Serial.print("angle-error: ");
+        Serial.println(angle_error);
       }
     } else {
       Serial.println("Fel vid HTTP-förfrågan");
@@ -311,25 +313,9 @@ void get_vector_to_destination(float x1, float y1, float x2, float y2) {
 }
 
 void get_angle_to_destination() {
-  angle_to_destination = atan(vector_to_destination[1] / vector_to_destination[0]);
-}
-
-float get_vector_length(float x, float y) {
-  return sqrt(x * x + y * y);
-}
-
-float[] normalize_vector(float x, float y) {
-  float vector_length = get_vector_length(x, y);
-  float x = x / vector_length;
-  float y = y / vector_length;
-  float[] new_vector = [x, y];
-  return new_vector;
-}
-
-float dot_product(float x1, float y1, float x2, float y2, float angle) {
-  float length_v1 = get_vector_length(x1, y1);
-  float length_v2 = get_vector_length(x2, y2);
-  return length_v1 * length_v2 * cos(angle);
+  angle_to_destination = atan(vector_to_destination[1] / vector_to_destination[0]) * (360 / (2 * 3.14159265358));
+  if (angle_to_destination < 0) angle_to_destination += 360;
+  angle_error = angle_to_destination - heading;
 }
 
 void forward() {
