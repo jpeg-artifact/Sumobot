@@ -16,8 +16,8 @@
 #define IN4_PIN 12  // The ESP32 pin GPIO12 connected to the IN4 pin L298N
 #define ENB_PIN 13  // The ESP32 pin GPIO13 connected to the ENB pin L298N
 
-const char* ssid = "SSIS_IOT";    
-const char* password = "hRBjs7Ye";  
+const char* ssid = "";    
+const char* password = "";  
 
 AsyncWebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81);  // WebSocket server on port 81
