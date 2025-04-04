@@ -29,6 +29,7 @@ int16_t mx, my, mz;
 float heading;
 float tiltheading;
 float vector_to_destination[2] = {0, 0};
+float normal_vector[2] = {0, 0};
 float angle_to_destination = 0;
 float angle_error = 0;
 
@@ -189,6 +190,7 @@ void loop() {
         
         get_vector_to_destination(x_value, y_value, Destination[0], Destination[1]);
         get_angle_to_destination();
+        get_normal_vector();
         Serial.print("x-to-dest: ");
         Serial.println(vector_to_destination[0]);
         Serial.print("y-to-dest: ");
@@ -197,6 +199,9 @@ void loop() {
         Serial.println(angle_to_destination);
         Serial.print("angle-error: ");
         Serial.println(angle_error);
+        Serial.print("normal vector:");
+        Serial.println(normal_vector[0]);
+        Serial.println(normal_vector[1]);
       }
     } else {
       Serial.println("Fel vid HTTP-förfrågan");
@@ -316,6 +321,11 @@ void get_angle_to_destination() {
   angle_to_destination = atan(vector_to_destination[1] / vector_to_destination[0]) * (360 / (2 * 3.14159265358));
   if (angle_to_destination < 0) angle_to_destination += 360;
   angle_error = angle_to_destination - heading;
+}
+
+void get_normal_vector() {
+  normal_vector[0] = cos(heading);
+  normal_vector[1] = sin(heading);
 }
 
 void forward() {
