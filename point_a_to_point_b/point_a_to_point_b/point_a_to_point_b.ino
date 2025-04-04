@@ -315,6 +315,9 @@ void getCompassDate_calibrated() {
 void get_vector_to_destination(float x1, float y1, float x2, float y2) {
   vector_to_destination[0] = x2 - x1;
   vector_to_destination[1] = y2 - y1;
+  float length = sqrt(vector_to_destination[0] * vector_to_destination[0] + vector_to_destination[1] * vector_to_destination[1]);
+  vector_to_destination[0] = vector_to_destination[0] / length;
+  vector_to_destination[1] = vector_to_destination[1] / length;
 }
 
 void get_angle_to_destination() {
