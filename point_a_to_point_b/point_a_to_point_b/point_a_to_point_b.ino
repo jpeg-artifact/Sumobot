@@ -100,7 +100,7 @@ void setup() {
   }
   Serial.println("Connected to WiFi");
 
-  // initialize device
+  // initialize device. Om den fastnar koppla 10 dof bättre
   Serial.println("Initializing I2C devices...");
   accelgyro.initialize();
   bmp280.init();
@@ -197,11 +197,12 @@ void loop() {
         Serial.println(vector_to_destination[1]);
         Serial.print("angle: ");
         Serial.println(angle_to_destination);
+        Serial.print("normal vector:");
+        Serial.print(normal_vector[0]);
+        Serial.println(normal_vector[1]);
+        get_angle_error();
         Serial.print("angle-error: ");
         Serial.println(angle_error);
-        Serial.print("normal vector:");
-        Serial.println(normal_vector[0]);
-        Serial.println(normal_vector[1]);
       }
     } else {
       Serial.println("Fel vid HTTP-förfrågan");
@@ -323,12 +324,15 @@ void get_vector_to_destination(float x1, float y1, float x2, float y2) {
 void get_angle_to_destination() {
   angle_to_destination = atan(vector_to_destination[1] / vector_to_destination[0]) * (360 / (2 * 3.14159265358));
   if (angle_to_destination < 0) angle_to_destination += 360;
-  angle_error = angle_to_destination - heading;
 }
 
 void get_normal_vector() {
   normal_vector[0] = cos(heading);
   normal_vector[1] = sin(heading);
+}
+
+void get_angle_error() {
+  angle_error = atan(vector_to_destination[0] / vector_to_destination[1]) - atan(normal_vector[0] / normal_vector[1]);
 }
 
 void forward() {
