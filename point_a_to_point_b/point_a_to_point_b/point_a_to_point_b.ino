@@ -8,6 +8,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>  // Lägg till detta bibliotek för att hantera JSON
+#include <HMC5883L.h>
 
 const char* ssid = "SSIS_IOT";
 const char* password = "hRBjs7Ye";
@@ -30,7 +31,6 @@ float heading;
 float tiltheading;
 float vector_to_destination[2] = {0, 0};
 float normal_vector[2] = {0, 0};
-float angle_to_destination = 0;
 float angle_error = 0;
 
 float Axyz[3];
@@ -161,7 +161,7 @@ void loop() {
   Serial.println("The clockwise angle between the magnetic north and the projection of the positive X-Axis in the horizontal plane:");
   Serial.println(tiltheading);
   Serial.println("   ");
-
+  /*
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
 
@@ -188,21 +188,7 @@ void loop() {
         Serial.print("y-värde: ");
         Serial.println(y_value, 2);  // Skriv ut med 2 decimaler
         
-        get_vector_to_destination(x_value, y_value, Destination[0], Destination[1]);
-        get_angle_to_destination();
-        get_normal_vector();
-        Serial.print("x-to-dest: ");
-        Serial.println(vector_to_destination[0]);
-        Serial.print("y-to-dest: ");
-        Serial.println(vector_to_destination[1]);
-        Serial.print("angle: ");
-        Serial.println(angle_to_destination);
-        Serial.print("normal vector:");
-        Serial.print(normal_vector[0]);
-        Serial.println(normal_vector[1]);
-        get_angle_error();
-        Serial.print("angle-error: ");
-        Serial.println(angle_error);
+        
       }
     } else {
       Serial.println("Fel vid HTTP-förfrågan");
@@ -212,11 +198,24 @@ void loop() {
   }
 
   delay(2000);  // Vänta en stund innan nästa förfrågan
+  */
+  get_vector_to_destination(-13, 27, Destination[0], Destination[1]);
+  get_normal_vector();
+  Serial.print("x-to-dest: ");
+  Serial.println(vector_to_destination[0]);
+  Serial.print("y-to-dest: ");
+  Serial.println(vector_to_destination[1]);
+  Serial.print("normal vector:");
+  Serial.print(normal_vector[0]);
+  Serial.println(normal_vector[1]);
+  get_angle_error();
+  Serial.print("angle-error: ");
+  Serial.println(angle_error);
 }
 
 
 void getHeading(void) {
-  heading = 180 * atan2(Mxyz[1], Mxyz[0]) / PI;
+  heading = atan2(Mxyz[1], Mxyz[0]) / 0.01745329;
   if (heading < 0) heading += 360;
 }
 
@@ -321,18 +320,13 @@ void get_vector_to_destination(float x1, float y1, float x2, float y2) {
   vector_to_destination[1] = vector_to_destination[1] / length;
 }
 
-void get_angle_to_destination() {
-  angle_to_destination = atan(vector_to_destination[1] / vector_to_destination[0]) * (360 / (2 * 3.14159265358));
-  if (angle_to_destination < 0) angle_to_destination += 360;
-}
-
 void get_normal_vector() {
-  normal_vector[0] = cos(heading);
-  normal_vector[1] = sin(heading);
+  normal_vector[0] = cos(heading * 0.01745329);
+  normal_vector[1] = sin(heading * 0.01745329);
 }
 
 void get_angle_error() {
-  angle_error = atan(vector_to_destination[0] / vector_to_destination[1]) - atan(normal_vector[0] / normal_vector[1]);
+  angle_error = atan(vector_to_destination[0] / vector_to_destination[1]) - atan(normal_vector[0] / normal_vector[1]) + 1.7;
 }
 
 void forward() {
