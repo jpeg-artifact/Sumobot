@@ -215,8 +215,8 @@ void loop() {
 
 
 void getHeading(void) {
-  heading = atan2(Mxyz[1], Mxyz[0]) / 0.01745329;
-  if (heading < 0) heading += 360;
+  heading = 180 * atan2(Mxyz[1], Mxyz[0]) / PI;
+    if (heading < 0) heading += 360;
 }
 
 void getTiltHeading(void) {
