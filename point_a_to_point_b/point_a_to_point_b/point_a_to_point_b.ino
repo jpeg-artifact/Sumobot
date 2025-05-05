@@ -37,6 +37,7 @@ float Axyz[3];
 float Gxyz[3];
 float Mxyz[3];
 float Destination[2] = {36.0, 10.6};
+float Position[2] = {0.0, 0.0};
 
 #define sample_num_mdate 5000
 
@@ -116,8 +117,13 @@ void setup() {
   Serial.println("Testing device connections...");
   Serial.println(accelgyro.testConnection() ? "MPU9250 connection successful" : "MPU9250 connection failed");
 
+  get_position();
+
   delay(1000);
   Serial.println("     ");
+
+  Destination[0] = Position[0];
+  Destination[1] = Position[1];
 
   //  Mxyz_init_calibrated ();
 }
@@ -128,7 +134,7 @@ void loop() {
   getCompassDate_calibrated();  // compass data has been calibrated here
   getHeading();                 //before we use this function we should run 'getCompassDate_calibrated()' frist, so that we can get calibrated data ,then we can get correct angle .
   getTiltHeading();
-
+  /*
   Serial.println("calibration parameter: ");
   Serial.print(mx_centre);
   Serial.print("         ");
@@ -155,13 +161,48 @@ void loop() {
   Serial.print(Mxyz[1]);
   Serial.print(",");
   Serial.println(Mxyz[2]);
+  */
   Serial.println("The clockwise angle between the magnetic north and X-Axis:");
-  Serial.print(heading);
+  Serial.println(heading);
+  /*
   Serial.println(" ");
   Serial.println("The clockwise angle between the magnetic north and the projection of the positive X-Axis in the horizontal plane:");
   Serial.println(tiltheading);
   Serial.println("   ");
-  /*
+  */
+  
+  get_position();
+
+  get_vector_to_destination(Position[0], Position[1], Destination[0], Destination[1]);
+  Serial.print("Destination X: ");
+  Serial.println(Destination[0]);
+  Serial.print("Destination Y: ");
+  Serial.println(Destination[1]);
+  Serial.print("Position X: ");
+  Serial.println(Position[0]);
+  Serial.print("Position Y: ");
+  Serial.println(Position[1]);
+  get_normal_vector();
+  /*Serial.print("x-to-dest: ");
+  Serial.println(vector_to_destination[0]);
+  Serial.print("y-to-dest: ");
+  Serial.println(vector_to_destination[1]);*/
+  Serial.print("normal vector:");
+  Serial.print(normal_vector[0]);
+  Serial.println(normal_vector[1]);
+  get_angle_error();
+  Serial.print("angle-error: ");
+  Serial.println(angle_error);
+
+  // Turning
+  if (angle_error < 0) {
+    left();
+  } else {
+    right();
+  }
+}
+
+void get_position() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
 
@@ -179,16 +220,8 @@ void loop() {
         DynamicJsonDocument jsonDoc(1024);
         deserializeJson(jsonDoc, payload);
 
-        float x_value = jsonDoc[0]["x"];
-        float y_value = jsonDoc[0]["y"];
-
-        Serial.print("x-värde: ");
-        Serial.println(x_value, 2);  // Skriv ut med 2 decimaler
-
-        Serial.print("y-värde: ");
-        Serial.println(y_value, 2);  // Skriv ut med 2 decimaler
-        
-        
+        Position[0] = jsonDoc[0]["x"];
+        Position[1] = jsonDoc[0]["y"];
       }
     } else {
       Serial.println("Fel vid HTTP-förfrågan");
@@ -198,21 +231,7 @@ void loop() {
   }
 
   delay(2000);  // Vänta en stund innan nästa förfrågan
-  */
-  get_vector_to_destination(-13, 27, Destination[0], Destination[1]);
-  get_normal_vector();
-  Serial.print("x-to-dest: ");
-  Serial.println(vector_to_destination[0]);
-  Serial.print("y-to-dest: ");
-  Serial.println(vector_to_destination[1]);
-  Serial.print("normal vector:");
-  Serial.print(normal_vector[0]);
-  Serial.println(normal_vector[1]);
-  get_angle_error();
-  Serial.print("angle-error: ");
-  Serial.println(angle_error);
 }
-
 
 void getHeading(void) {
   heading = 180 * atan2(Mxyz[1], Mxyz[0]) / PI;
@@ -315,6 +334,12 @@ void getCompassDate_calibrated() {
 void get_vector_to_destination(float x1, float y1, float x2, float y2) {
   vector_to_destination[0] = x2 - x1;
   vector_to_destination[1] = y2 - y1;
+  if (vector_to_destination[0] == 0) {
+    vector_to_destination[0] = 0.01;
+  }
+  if (vector_to_destination[1] == 0) {
+    vector_to_destination[1] = 0.01;
+  }
   float length = sqrt(vector_to_destination[0] * vector_to_destination[0] + vector_to_destination[1] * vector_to_destination[1]);
   vector_to_destination[0] = vector_to_destination[0] / length;
   vector_to_destination[1] = vector_to_destination[1] / length;
@@ -326,7 +351,7 @@ void get_normal_vector() {
 }
 
 void get_angle_error() {
-  angle_error = atan(vector_to_destination[0] / vector_to_destination[1]) - atan(normal_vector[0] / normal_vector[1]) + 1.7;
+  angle_error = atan(vector_to_destination[0] / vector_to_destination[1]) - atan(normal_vector[0] / normal_vector[1]);
 }
 
 void forward() {
