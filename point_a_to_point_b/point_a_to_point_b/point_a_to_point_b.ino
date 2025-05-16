@@ -33,6 +33,10 @@ float vector_to_destination[2] = {0, 0};
 float normal_vector[2] = {0, 0};
 float angle_error = 0;
 
+TaskHandle_t Task1;
+TaskHandle_t Task2;
+
+
 float Axyz[3];
 float Gxyz[3];
 float Mxyz[3];
@@ -117,7 +121,32 @@ void setup() {
   Serial.println("Testing device connections...");
   Serial.println(accelgyro.testConnection() ? "MPU9250 connection successful" : "MPU9250 connection failed");
 
-  get_position();
+  if (WiFi.status() == WL_CONNECTED) {
+      HTTPClient http;
+
+      // Ange URL:en som du vill hämta data från
+      String url = "https://track.ssis.nu/last/T37";
+
+      http.begin(url);
+      int httpCode = http.GET();
+
+      if (httpCode > 0) {
+        if (httpCode == HTTP_CODE_OK) {
+          String payload = http.getString();
+
+          // Hantera JSON
+          DynamicJsonDocument jsonDoc(1024);
+          deserializeJson(jsonDoc, payload);
+
+          Position[0] = jsonDoc[0]["x"];
+          Position[1] = jsonDoc[0]["y"];
+        }
+      } else {
+        Serial.println("Fel vid HTTP-förfrågan");
+      }
+
+      http.end();
+    }
 
   delay(1000);
   Serial.println("     ");
@@ -126,111 +155,134 @@ void setup() {
   Destination[1] = Position[1];
 
   //  Mxyz_init_calibrated ();
+  xTaskCreatePinnedToCore(
+      get_position, /* Function to implement the task */
+      "Task1", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      0,  /* Priority of the task */
+      &Task1,  /* Task handle. */
+      0); /* Core where the task should run */
+
+  xTaskCreatePinnedToCore(
+      compass_loop, /* Function to implement the task */
+      "Task2", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      1,  /* Priority of the task */
+      &Task2,  /* Task handle. */
+      1); /* Core where the task should run */
 }
 
 void loop() {
-  getAccel_Data();
-  getGyro_Data();
-  getCompassDate_calibrated();  // compass data has been calibrated here
-  getHeading();                 //before we use this function we should run 'getCompassDate_calibrated()' frist, so that we can get calibrated data ,then we can get correct angle .
-  getTiltHeading();
-  /*
-  Serial.println("calibration parameter: ");
-  Serial.print(mx_centre);
-  Serial.print("         ");
-  Serial.print(my_centre);
-  Serial.print("         ");
-  Serial.println(mz_centre);
-  Serial.println("     ");
 
-  Serial.println("Acceleration(g) of X,Y,Z:");
-  Serial.print(Axyz[0]);
-  Serial.print(",");
-  Serial.print(Axyz[1]);
-  Serial.print(",");
-  Serial.println(Axyz[2]);
-  Serial.println("Gyro(degress/s) of X,Y,Z:");
-  Serial.print(Gxyz[0]);
-  Serial.print(",");
-  Serial.print(Gxyz[1]);
-  Serial.print(",");
-  Serial.println(Gxyz[2]);
-  Serial.println("Compass Value of X,Y,Z:");
-  Serial.print(Mxyz[0]);
-  Serial.print(",");
-  Serial.print(Mxyz[1]);
-  Serial.print(",");
-  Serial.println(Mxyz[2]);
-  */
-  Serial.println("The clockwise angle between the magnetic north and X-Axis:");
-  Serial.println(heading);
-  /*
-  Serial.println(" ");
-  Serial.println("The clockwise angle between the magnetic north and the projection of the positive X-Axis in the horizontal plane:");
-  Serial.println(tiltheading);
-  Serial.println("   ");
-  */
-  
-  get_position();
+}
 
-  get_vector_to_destination(Position[0], Position[1], Destination[0], Destination[1]);
-  Serial.print("Destination X: ");
-  Serial.println(Destination[0]);
-  Serial.print("Destination Y: ");
-  Serial.println(Destination[1]);
-  Serial.print("Position X: ");
-  Serial.println(Position[0]);
-  Serial.print("Position Y: ");
-  Serial.println(Position[1]);
-  get_normal_vector();
-  /*Serial.print("x-to-dest: ");
-  Serial.println(vector_to_destination[0]);
-  Serial.print("y-to-dest: ");
-  Serial.println(vector_to_destination[1]);*/
-  Serial.print("normal vector:");
-  Serial.print(normal_vector[0]);
-  Serial.println(normal_vector[1]);
-  get_angle_error();
-  Serial.print("angle-error: ");
-  Serial.println(angle_error);
+void compass_loop( void * pvParameters ) {
+  while (true) {
+    getAccel_Data();
+    getGyro_Data();
+    getCompassDate_calibrated();  // compass data has been calibrated here
+    getHeading();                 //before we use this function we should run 'getCompassDate_calibrated()' frist, so that we can get calibrated data ,then we can get correct angle .
+    getTiltHeading();
+    /*
+    Serial.println("calibration parameter: ");
+    Serial.print(mx_centre);
+    Serial.print("         ");
+    Serial.print(my_centre);
+    Serial.print("         ");
+    Serial.println(mz_centre);
+    Serial.println("     ");
 
-  // Turning
-  if (angle_error < 0) {
-    left();
-  } else {
-    right();
+    Serial.println("Acceleration(g) of X,Y,Z:");
+    Serial.print(Axyz[0]);
+    Serial.print(",");
+    Serial.print(Axyz[1]);
+    Serial.print(",");
+    Serial.println(Axyz[2]);
+    Serial.println("Gyro(degress/s) of X,Y,Z:");
+    Serial.print(Gxyz[0]);
+    Serial.print(",");
+    Serial.print(Gxyz[1]);
+    Serial.print(",");
+    Serial.println(Gxyz[2]);
+    Serial.println("Compass Value of X,Y,Z:");
+    Serial.print(Mxyz[0]);
+    Serial.print(",");
+    Serial.print(Mxyz[1]);
+    Serial.print(",");
+    Serial.println(Mxyz[2]);
+    */
+    Serial.println("The clockwise angle between the magnetic north and X-Axis:");
+    Serial.println(heading);
+    /*
+    Serial.println(" ");
+    Serial.println("The clockwise angle between the magnetic north and the projection of the positive X-Axis in the horizontal plane:");
+    Serial.println(tiltheading);
+    Serial.println("   ");
+    */
+
+    get_vector_to_destination(Position[0], Position[1], Destination[0], Destination[1]);
+    Serial.print("Destination X: ");
+    Serial.println(Destination[0]);
+    Serial.print("Destination Y: ");
+    Serial.println(Destination[1]);
+    Serial.print("Position X: ");
+    Serial.println(Position[0]);
+    Serial.print("Position Y: ");
+    Serial.println(Position[1]);
+    get_normal_vector();
+    /*Serial.print("x-to-dest: ");
+    Serial.println(vector_to_destination[0]);
+    Serial.print("y-to-dest: ");
+    Serial.println(vector_to_destination[1]);*/
+    Serial.print("normal vector:");
+    Serial.print(normal_vector[0]);
+    Serial.println(normal_vector[1]);
+    get_angle_error();
+    Serial.print("angle-error: ");
+    Serial.println(angle_error);
+
+    // Turning
+    if (angle_error < 0) {
+      left();
+    } else {
+      right();
+    }
   }
 }
 
-void get_position() {
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
+void get_position( void * pvParameters ) {
+  while (true) {
+    if (WiFi.status() == WL_CONNECTED) {
+      HTTPClient http;
 
-    // Ange URL:en som du vill hämta data från
-    String url = "https://track.ssis.nu/last/T37";
+      // Ange URL:en som du vill hämta data från
+      String url = "https://track.ssis.nu/last/T37";
 
-    http.begin(url);
-    int httpCode = http.GET();
+      http.begin(url);
+      int httpCode = http.GET();
 
-    if (httpCode > 0) {
-      if (httpCode == HTTP_CODE_OK) {
-        String payload = http.getString();
+      if (httpCode > 0) {
+        if (httpCode == HTTP_CODE_OK) {
+          String payload = http.getString();
 
-        // Hantera JSON
-        DynamicJsonDocument jsonDoc(1024);
-        deserializeJson(jsonDoc, payload);
+          // Hantera JSON
+          DynamicJsonDocument jsonDoc(1024);
+          deserializeJson(jsonDoc, payload);
 
-        Position[0] = jsonDoc[0]["x"];
-        Position[1] = jsonDoc[0]["y"];
+          Position[0] = jsonDoc[0]["x"];
+          Position[1] = jsonDoc[0]["y"];
+        }
+      } else {
+        Serial.println("Fel vid HTTP-förfrågan");
       }
-    } else {
-      Serial.println("Fel vid HTTP-förfrågan");
+
+      http.end();
     }
 
-    http.end();
+    delay(2000);  // Vänta en stund innan nästa förfrågan
   }
-
-  delay(2000);  // Vänta en stund innan nästa förfrågan
 }
 
 void getHeading(void) {
